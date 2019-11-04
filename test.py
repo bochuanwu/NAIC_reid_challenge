@@ -55,17 +55,17 @@ def test(**kwargs):
         batch_size=opt.test_batch, num_workers=opt.workers,
         pin_memory=pin_memory)
 
-    # queryFliploader = DataLoader(
-    #     ImageDataset(dataset.query, transform=build_transforms(opt, is_train=False)),
-    #     batch_size=opt.test_batch, num_workers=opt.workers,
-    #     pin_memory=pin_memory
-    # )
-    #
-    # galleryFliploader = DataLoader(
-    #     ImageDataset(dataset.gallery, transform=build_transforms(opt, is_train=False)),
-    #     batch_size=opt.test_batch, num_workers=opt.workers,
-    #     pin_memory=pin_memory
-    # )
+    queryFliploader = DataLoader(
+        ImageDataset(query_dataset, transform=build_transforms(opt, is_train=False, flip=True)),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
+
+    galleryFliploader = DataLoader(
+        ImageDataset(gallery_dataset, transform=build_transforms(opt, is_train=False, flip=True)),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
 
     print('initializing model ...')
 
@@ -83,7 +83,7 @@ def test(**kwargs):
         model = nn.DataParallel(model).cuda()
     reid_evaluator = Evaluator(model, norm=opt.norm)
 
-    results = reid_evaluator.evaluate(queryloader, galleryloader)
+    results = reid_evaluator.evaluate(queryloader, galleryloader, queryFliploader, galleryFliploader, eval_flip=True)
 
     with open('./result/submission_example_A.json', "w", encoding='utf-8') as fd:
         json.dump(results, fd)

@@ -12,6 +12,7 @@ class DefaultConfig(object):
     label_smooth = 'on'
     use_center = False
     sampler = 'softmax_triplet' #softmax, triplet， softmax_triplet
+    sampler_new = True
     loss_type = 'triplet' #'triplet_center'， 'triplet'， 'center', 'softmax', 'softmax_triplet'
     center_weight = 0.0005
     optim = 'adam'

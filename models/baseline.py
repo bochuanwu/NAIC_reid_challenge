@@ -9,7 +9,7 @@ from torch import nn
 
 from .backbones.resnet import ResNet, BasicBlock, Bottleneck
 from .backbones.senet import SENet, SEResNetBottleneck, SEBottleneck, SEResNeXtBottleneck
-from .backbones.resnet_ibn_a import resnet50_ibn_a
+from .backbones.resnet_ibn_a import resnet50_ibn_a, resnet101_ibn_a
 
 
 def weights_init_kaiming(m):
@@ -127,6 +127,8 @@ class Baseline(nn.Module):
                               last_stride=last_stride)
         elif model_name == 'resnet50_ibn_a':
             self.base = resnet50_ibn_a(last_stride)
+        elif model_name == 'resnet101_ibn_a':
+            self.base = resnet101_ibn_a(last_stride)
 
         if pretrain_choice == 'imagenet':
             self.base.load_param(model_path)
