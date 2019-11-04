@@ -47,7 +47,9 @@ def train(**kwargs):
         print('currently using cpu')
 
     print('initializing tx_chanllege dataset')
-    dataset = Tx_dataset().dataset
+    dataset = Tx_dataset(file_list='train_list_new.txt').dataset
+    query_dataset = Tx_dataset(set='train_set', file_list='val_query_list.txt').dataset
+    gallery_dataset = Tx_dataset(set='train_set', file_list='val_gallery_list.txt').dataset
 
     train_set = ImageDataset(dataset, transform=build_transforms(opt, is_train=True))
 
@@ -71,17 +73,15 @@ def train(**kwargs):
             pin_memory=pin_memory, drop_last=True
         )
 
-    # queryloader = DataLoader(
-    #     ImageData(dataset.query, TestTransform()),
-    #     batch_size=opt.test_batch, num_workers=opt.workers,
-    #     pin_memory=pin_memory
-    # )
-    #
-    # galleryloader = DataLoader(
-    #     ImageData(dataset.gallery, TestTransform()),
-    #     batch_size=opt.test_batch, num_workers=opt.workers,
-    #     pin_memory=pin_memory
-    # )
+    queryloader = DataLoader(
+        ImageDataset(query_dataset, transform=build_transforms(opt, is_train=False)),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory)
+
+    galleryloader = DataLoader(
+        ImageDataset(gallery_dataset, transform=build_transforms(opt, is_train=False)),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory)
     # queryFliploader = DataLoader(
     #     ImageData(dataset.query, TestTransform(True)),
     #     batch_size=opt.test_batch, num_workers=opt.workers,
@@ -143,12 +143,11 @@ def train(**kwargs):
 
         # skip if not save model
         if opt.eval_step > 0 and (epoch + 1) % opt.eval_step == 0 or (epoch + 1) == opt.max_epoch:
-            # rank1 = reid_evaluator.evaluate(queryloader, galleryloader, queryFliploader, galleryFliploader)
-            # is_best = rank1 > best_rank1
-            is_best = 0
-            # if is_best:
-            #     best_rank1 = rank1
-            #     best_epoch = epoch + 1
+            rank1 = reid_evaluator.validation(queryloader, galleryloader)
+            is_best = rank1 > best_rank1
+            if is_best:
+                best_rank1 = rank1
+                best_epoch = epoch + 1
 
             if use_gpu:
                 state_dict = model.module.state_dict()

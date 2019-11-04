@@ -17,10 +17,10 @@ class Evaluator:
         self.model.eval()
         qf, q_paths = [], []
         for inputs0, inputs1 in zip(queryloader, queryFliploader):
-            inputs, paths = self._parse_data(inputs0)
+            inputs, _, paths = self._parse_data(inputs0)
             feature0 = self._forward(inputs)
             if eval_flip:
-                inputs, _ = self._parse_data(inputs1)
+                inputs, _, _ = self._parse_data(inputs1)
                 feature1 = self._forward(inputs)
                 qf.append((feature0 + feature1) / 2.0)
             else:
@@ -35,10 +35,10 @@ class Evaluator:
 
         gf, g_paths = [], []
         for inputs0, inputs1 in zip(galleryloader, galleryFliploader):
-            inputs, paths = self._parse_data(inputs0)
+            inputs, _, paths = self._parse_data(inputs0)
             feature0 = self._forward(inputs)
             if eval_flip:
-                inputs, _ = self._parse_data(inputs1)
+                inputs, _, _ = self._parse_data(inputs1)
                 feature1 = self._forward(inputs)
                 gf.append((feature0 + feature1) / 2.0)
             else:
@@ -113,11 +113,87 @@ class Evaluator:
 
         return clusters
 
+    def validation(self, queryloader, galleryloader, ranks=[1]):
+        self.model.eval()
+        qf, q_pids = [], []
+        for i, inputs0 in enumerate(queryloader):
+            inputs, pids, _ = self._parse_data(inputs0)
+            feature0 = self._forward(inputs)
+            qf.append(feature0)
+            q_pids.extend(list(map(int, pids)))
+
+        qf = torch.cat(qf, 0)
+        if True == self.norm:
+            qf = torch.nn.functional.normalize(qf, dim=1, p=2)
+        q_pids = torch.Tensor(q_pids)
+
+        print("Extracted features for query set: {} x {}".format(qf.size(0), qf.size(1)))
+
+        gf, g_pids = [], []
+        for i, inputs0 in enumerate(galleryloader):
+            inputs, pids, _ = self._parse_data(inputs0)
+            feature0 = self._forward(inputs)
+            gf.append(feature0)
+            g_pids.extend(list(map(int, pids)))
+
+        gf = torch.cat(gf, 0)
+        if True == self.norm:
+            gf = torch.nn.functional.normalize(gf, dim=1, p=2)
+        g_pids = torch.Tensor(g_pids)
+
+        print("Extracted features for gallery set: {} x {}".format(gf.size(0), gf.size(1)))
+
+        print("Computing distance matrix")
+        m, n = qf.size(0), gf.size(0)
+        q_g_dist = torch.pow(qf, 2).sum(dim=1, keepdim=True).expand(m, n) + \
+            torch.pow(gf, 2).sum(dim=1, keepdim=True).expand(n, m).t()
+        q_g_dist.addmm_(1, -2, qf, gf.t())
+
+        print("Computing CMC and mAP")
+        cmc, mAP = self.eval_func_gpu(q_g_dist, q_pids, g_pids)
+
+        print("Results ----------")
+        print("mAP: {:.1%}".format(mAP))
+        print("CMC curve")
+        for r in ranks:
+            print("Rank-{:<3}: {:.1%}".format(r, cmc[r - 1]))
+        print("------------------")
+        return cmc[0]
+
+
     def _parse_data(self, inputs):
-        imgs, _, image_path = inputs
-        return imgs.cuda(), image_path
+        imgs, pids, image_path = inputs
+        return imgs.cuda(), pids, image_path
 
     def _forward(self, inputs):
         with torch.no_grad():
             feature = self.model(inputs)
         return feature.cpu()
+
+    def eval_func_gpu(self, distmat, q_pids, g_pids, max_rank=200):
+        num_q, num_g = distmat.size()
+        if num_g < max_rank:
+            max_rank = num_g
+            print("Note: number of gallery samples is quite small, got {}".format(num_g))
+        _, indices = torch.sort(distmat, dim=1)
+        matches = (g_pids[indices] == q_pids.view([num_q, -1]))
+
+        results = []
+        num_rel = []
+        for i in range(num_q):
+            m = matches[i][:]
+            if m.any():
+                num_rel.append(m.sum())
+                results.append(m[:max_rank].unsqueeze(0))
+        matches = torch.cat(results, dim=0).float()
+        num_rel = torch.Tensor(num_rel)
+
+        cmc = matches.cumsum(dim=1)
+        cmc[cmc > 1] = 1
+        all_cmc = cmc.sum(dim=0) / cmc.size(0)
+
+        pos = torch.Tensor(range(1, max_rank+1))
+        temp_cmc = matches.cumsum(dim=1) / pos * matches
+        AP = temp_cmc.sum(dim=1) / num_rel
+        mAP = AP.sum() / AP.size(0)
+        return all_cmc.numpy(), mAP.item()

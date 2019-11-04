@@ -85,6 +85,8 @@ def test(**kwargs):
 
     results = reid_evaluator.evaluate(queryloader, galleryloader, queryFliploader, galleryFliploader, eval_flip=True)
 
+    # reid_evaluator.validation(queryloader, galleryloader)
+
     with open('./result/submission_example_A.json', "w", encoding='utf-8') as fd:
         json.dump(results, fd)
 
