@@ -69,7 +69,80 @@ def test(**kwargs):
 
     print('initializing model ...')
 
-    model = build_model(opt, num_classes=4768)
+    model = build_model(opt)
+
+    if opt.pretrained_choice == 'self':
+        state_dict = torch.load(opt.pretrained_model)['state_dict']
+        # state_dict = {k: v for k, v in state_dict.items() \
+        #        if not ('reduction' in k or 'softmax' in k)}
+        model.load_state_dict(state_dict, False)
+        print('load pretrained model ' + opt.pretrained_model)
+    print('model size: {:.5f}M'.format(sum(p.numel() for p in model.parameters()) / 1e6))
+
+    if use_gpu:
+        model = nn.DataParallel(model).cuda()
+    reid_evaluator = Evaluator(model, norm=opt.norm, eval_flip=opt.eval_flip, re_ranking=opt.re_ranking)
+
+    results = reid_evaluator.evaluate(queryloader, galleryloader, queryFliploader, galleryFliploader,
+                                      eval_flip=True, re_ranking=False,  k1=6, k2=2)
+
+    # reid_evaluator.validation(queryloader, galleryloader)
+
+    with open('./result/submission_example_A.json', "w", encoding='utf-8') as fd:
+        json.dump(results, fd)
+
+def validate(**kwargs):
+    opt._parse(kwargs)
+
+    # set random seed and cudnn benchmark
+    torch.manual_seed(opt.seed)
+    os.makedirs(opt.save_dir, exist_ok=True)
+    use_gpu = torch.cuda.is_available()
+    sys.stdout = Logger(osp.join(opt.save_dir, 'log_train.txt'))
+
+    print('=========user config==========')
+    pprint(opt._state_dict())
+    print('============end===============')
+
+    if use_gpu:
+        print('currently using GPU')
+        cudnn.benchmark = True
+        torch.cuda.manual_seed_all(opt.seed)
+    else:
+        print('currently using cpu')
+
+    print('initializing tx_chanllege dataset')
+
+    pin_memory = True if use_gpu else False
+    query_dataset = Tx_dataset(set='train_set', file_list='val_query_list.txt').dataset
+    gallery_dataset = Tx_dataset(set='train_set', file_list='val_gallery_list.txt').dataset
+
+
+    queryloader = DataLoader(
+        ImageDataset(query_dataset, transform=build_transforms(opt, is_train=False)),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory)
+
+    galleryloader = DataLoader(
+        ImageDataset(gallery_dataset, transform=build_transforms(opt, is_train=False)),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory)
+
+    queryFliploader = DataLoader(
+        ImageDataset(query_dataset, transform=build_transforms(opt, is_train=False, flip=True)),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
+
+    galleryFliploader = DataLoader(
+        ImageDataset(gallery_dataset, transform=build_transforms(opt, is_train=False, flip=True)),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
+
+    print('initializing model ...')
+
+    model = build_model(opt)
 
     if opt.pretrained_choice == 'self':
         state_dict = torch.load(opt.pretrained_model)['state_dict']
@@ -83,12 +156,24 @@ def test(**kwargs):
         model = nn.DataParallel(model).cuda()
     reid_evaluator = Evaluator(model, norm=opt.norm)
 
-    results = reid_evaluator.evaluate(queryloader, galleryloader, queryFliploader, galleryFliploader, eval_flip=True)
+    print("without reranking testing......")
+    reid_evaluator.validation(queryloader, galleryloader, queryFliploader, galleryFliploader)
 
-    # reid_evaluator.validation(queryloader, galleryloader)
+    max_score = 0
+    k = 0
+    for k1 in range(1, 21):
+            print("**********k1:{}***********".format(k1))
+            score = reid_evaluator.validation(queryloader, galleryloader, queryFliploader, galleryFliploader, re_ranking=True,
+                                              k1=k1, k2=2, lambda_value=0.3)
+            if score > max_score:
+                max_score = score
+                k = k1
 
-    with open('./result/submission_example_A.json', "w", encoding='utf-8') as fd:
-        json.dump(results, fd)
+    print("max_score: {} at k: {}".format(max_score, k))
+
+
+    # with open('./result/submission_example_A.json', "w", encoding='utf-8') as fd:
+    #     json.dump(results, fd)
 
 if __name__ == '__main__':
     import fire

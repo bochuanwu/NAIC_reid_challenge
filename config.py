@@ -27,9 +27,6 @@ class DefaultConfig(object):
     margin = None
     num_instances = 4
     num_gpu = 1
-    evaluate = False
-    savefig = None
-    eval_flip = False
 
     #data augment
     PIXEL_MEAN = [0.485, 0.456, 0.406]
@@ -39,7 +36,7 @@ class DefaultConfig(object):
     PADDING = 10
     SIZE_TRAIN = [256, 128]
     SIZE_TEST = [256, 128]
-
+    NUM_CLASS = 2465
 
 
     # model option
@@ -52,6 +49,9 @@ class DefaultConfig(object):
 
     # test option
     neck_feat = 'after' #before after
+    eval_flip = False
+    re_ranking = False
+    norm = False
 
     # miscs
     print_freq = 10
@@ -60,7 +60,6 @@ class DefaultConfig(object):
     workers = 10
     start_epoch = 0
     best_rank = -np.inf
-    norm = False
 
     def _parse(self, kwargs):
         for k, v in kwargs.items():

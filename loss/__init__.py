@@ -8,12 +8,16 @@ import torch.nn.functional as F
 
 from .triplet_loss import TripletLoss, CrossEntropyLabelSmooth
 from .center_loss import CenterLoss
+from .rank_loss import RankedLoss
 
 
-def make_loss(opt, num_classes):
+def make_loss(opt):
+    num_classes = opt.NUM_CLASS
     sampler = opt.sampler
     if opt.loss_type == 'triplet':
         triplet = TripletLoss(opt.margin)
+    elif opt.loss_type == 'rank':
+        triplet = RankedLoss()
     else:
         print('expected loss_type should be triplet'
               'but got {}'.format(opt.loss_type))
@@ -30,7 +34,7 @@ def make_loss(opt, num_classes):
             return triplet(feat, target)[0]
     elif opt.sampler == 'softmax_triplet':
         def loss_func(score, feat, target):
-            if opt.loss_type == 'triplet':
+            if opt.loss_type == 'triplet' or opt.loss_type == 'rank':
                 if opt.label_smooth == 'on':
                     return xent(score, target) + triplet(feat, target)[0]
                 else:
@@ -44,7 +48,8 @@ def make_loss(opt, num_classes):
     return loss_func
 
 
-def make_loss_with_center(opt, num_classes):    # modified by gu
+def make_loss_with_center(opt):    # modified by gu
+    num_classes = opt.NUM_CLASS
     if opt.model_name == 'resnet18' or opt.model_name == 'resnet34':
         feat_dim = 512
     else:

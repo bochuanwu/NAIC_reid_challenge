@@ -82,21 +82,22 @@ def train(**kwargs):
         ImageDataset(gallery_dataset, transform=build_transforms(opt, is_train=False)),
         batch_size=opt.test_batch, num_workers=opt.workers,
         pin_memory=pin_memory)
-    # queryFliploader = DataLoader(
-    #     ImageData(dataset.query, TestTransform(True)),
-    #     batch_size=opt.test_batch, num_workers=opt.workers,
-    #     pin_memory=pin_memory
-    # )
-    #
-    # galleryFliploader = DataLoader(
-    #     ImageData(dataset.gallery, TestTransform(True)),
-    #     batch_size=opt.test_batch, num_workers=opt.workers,
-    #     pin_memory=pin_memory
-    # )
+
+    queryFliploader = DataLoader(
+        ImageDataset(query_dataset, transform=build_transforms(opt, is_train=False, flip=True)),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
+
+    galleryFliploader = DataLoader(
+        ImageDataset(gallery_dataset, transform=build_transforms(opt, is_train=False, flip=True)),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
 
     print('initializing model ...')
 
-    model = build_model(opt, num_classes=4768)
+    model = build_model(opt)
 
     optim_policy = model.get_optim_policy()
 
@@ -110,18 +111,12 @@ def train(**kwargs):
 
     if use_gpu:
         model = nn.DataParallel(model).cuda()
-    reid_evaluator = Evaluator(model, norm=opt.norm)
-
-    if opt.evaluate:
-        reid_evaluator.evaluate(queryloader, galleryloader,
-                                queryFliploader, galleryFliploader, re_ranking=opt.re_ranking, eval_flip=opt.eval_flip,
-                                savefig=opt.savefig)
-        return
+    reid_evaluator = Evaluator(model, norm=opt.norm, eval_flip=opt.eval_flip, re_ranking=opt.re_ranking)
 
     if opt.use_center:
-        criterion = make_loss_with_center(opt, num_classes=4768)
+        criterion = make_loss_with_center(opt)
     else:
-        criterion = make_loss(opt, num_classes=4768)
+        criterion = make_loss(opt)
 
     # get optimizer
     if opt.optim == "sgd":
@@ -143,7 +138,9 @@ def train(**kwargs):
 
         # skip if not save model
         if opt.eval_step > 0 and (epoch + 1) % opt.eval_step == 0 or (epoch + 1) == opt.max_epoch:
-            rank1 = reid_evaluator.validation(queryloader, galleryloader)
+            rank1 = reid_evaluator.validation(queryloader, galleryloader, queryFliploader, galleryFliploader)
+            print('start re_ranking......')
+            _ = reid_evaluator.validation(queryloader, galleryloader, queryFliploader, galleryFliploader, re_ranking=True)
             is_best = rank1 > best_rank1
             if is_best:
                 best_rank1 = rank1

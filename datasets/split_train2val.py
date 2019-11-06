@@ -3,18 +3,42 @@ import random
 
 val_num = 500
 train_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/train_list_new.txt'
-val_query_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/val_query_list.txt'
-val_gallery_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/val_gallery_list.txt'
+train_list1 = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/train_list_new1.txt'
+# val_query_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/val_query_list.txt'
+# val_gallery_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/val_gallery_list.txt'
 
 train_fd = open(train_list, 'r')
-val_q_fd = open(val_query_list, 'r')
-val_g_fd = open(val_gallery_list, 'r')
+train_fd1 = open(train_list1, 'r')
+print(len(train_fd.readlines()), len(train_fd1.readlines()))
 
-train = len(train_fd.readlines())
-gallery = len(val_g_fd.readlines())
-query = len(val_q_fd.readlines())
+# val_q_fd = open(val_query_list, 'r')
+# val_g_fd = open(val_gallery_list, 'r')
 
-print(train, gallery, query, train+gallery+query)
+# train = len(train_fd.readlines())
+# gallery = len(val_g_fd.readlines())
+# query = len(val_q_fd.readlines())
+#
+# print(train, gallery, query, train+gallery+query)
+
+# lines = train_fd.readlines()
+# last_pid = 0
+# count = 0
+# for line in lines:
+#     pid = eval(line.split(' ')[-1].replace('\n', ''))
+#     image_name = line.split(' ')[0].split('/')[-1]
+#     if pid != last_pid:
+#         count +=1
+#
+#     last_pid = pid
+#     train_fd1.write(image_name)
+#     train_fd1.write(' ')
+#     train_fd1.write(str(count))
+#     train_fd1.write('\n')
+#
+# train_fd.close()
+# train_fd1.close()
+
+
 
 
 # with open('/Users/zhoumi/git-project/dataset/tx_dataset_reid/train/train_list_new.txt', 'r') as fd:
