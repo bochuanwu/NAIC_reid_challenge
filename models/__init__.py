@@ -5,10 +5,16 @@
 """
 
 from .baseline import Baseline
+from .pcb import pcb_p6, pcb_p4
+from .MGN import MGN
 
 
 def build_model(opt):
-    # if cfg.MODEL.NAME == 'resnet50':
-    #     model = Baseline(num_classes, cfg.MODEL.LAST_STRIDE, cfg.MODEL.PRETRAIN_PATH, cfg.MODEL.NECK, cfg.TEST.NECK_FEAT)
-    model = Baseline(opt.NUM_CLASS, opt.last_stride, opt.pretrained_model, opt.bnneck, opt.neck_feat, opt.model_name, opt.pretrained_choice)
+
+    if opt.model_name == "pcb":
+        model = pcb_p6(num_classes=opt.NUM_CLASS, neck = opt.bnneck, neck_feat=opt.neck_feat)
+    elif opt.model_name == "MGN":
+        model =MGN(opt.NUM_CLASS, opt.pretrained_choice, opt.pretrained_model, opt.bnneck, opt.neck_feat, last_stride = 2, pool = 'avg', feats = 256)
+    else:
+        model = Baseline(opt.NUM_CLASS, opt.last_stride, opt.pretrained_model, opt.bnneck, opt.neck_feat, opt.model_name, opt.pretrained_choice)
     return model

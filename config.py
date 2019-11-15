@@ -14,6 +14,7 @@ class DefaultConfig(object):
     sampler = 'softmax_triplet' #softmax, triplet， softmax_triplet
     sampler_new = True
     loss_type = 'triplet' #'triplet_center'， 'triplet'， 'center', 'softmax', 'softmax_triplet'
+    triplet_weight = 1.3
     center_weight = 0.0005
     optim = 'adam'
     max_epoch = 150
@@ -44,8 +45,8 @@ class DefaultConfig(object):
     last_stride = 1
     pretrained_model = '/home/zhoumi/.torch/models/resnet50-19c8e357.pth'
     bnneck = 'bnneck'  # bnneck, no
-    MHN_parts = 6
     pretrained_choice = 'imagenet' #'imagenet' or 'self'
+    num_parts = 6
 
     # test option
     neck_feat = 'after' #before after

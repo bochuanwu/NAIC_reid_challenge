@@ -33,12 +33,12 @@ def make_loss(opt):
         def loss_func(score, feat, target):
             return triplet(feat, target)[0]
     elif opt.sampler == 'softmax_triplet':
-        def loss_func(score, feat, target):
+        def loss_func(score, feat, target, weight_s = 1.0, weight_t = 1.0):
             if opt.loss_type == 'triplet' or opt.loss_type == 'rank':
                 if opt.label_smooth == 'on':
-                    return xent(score, target) + triplet(feat, target)[0]
+                    return weight_s * xent(score, target) + weight_t * opt.triplet_weight * triplet(feat, target)[0]
                 else:
-                    return F.cross_entropy(score, target) + triplet(feat, target)[0]
+                    return weight_s * F.cross_entropy(score, target) + weight_t *opt.triplet_weight * triplet(feat, target)[0]
             else:
                 print('expected loss_type should be triplet'
                       'but got {}'.format(opt.loss_type))

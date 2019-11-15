@@ -2,14 +2,14 @@ import glob
 import random
 
 val_num = 500
-train_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/train_list_new.txt'
-train_list1 = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/train_list_new1.txt'
+train_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/train/train_list.txt'
+# train_list1 = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/train_list_new1.txt'
 # val_query_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/val_query_list.txt'
 # val_gallery_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/val_gallery_list.txt'
 
 train_fd = open(train_list, 'r')
-train_fd1 = open(train_list1, 'r')
-print(len(train_fd.readlines()), len(train_fd1.readlines()))
+# train_fd1 = open(train_list1, 'r')
+# print(len(train_fd.readlines()), len(train_fd1.readlines()))
 
 # val_q_fd = open(val_query_list, 'r')
 # val_g_fd = open(val_gallery_list, 'r')
@@ -116,6 +116,42 @@ print(len(train_fd.readlines()), len(train_fd1.readlines()))
     #         train_fd.write(' ')
     #         train_fd.write(str(pid))
     #         train_fd.write('\n')
+
+
+# add test into train
+
+# lines = train_fd.readlines()
+#
+# for line in lines:
+#     train_fd1.write(line)
+#
+#
+# query_path = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/test/query_a_list.txt'
+# count = 2465
+# print(count)
+# with open(query_path, 'r') as fd:
+#     query_lines = fd.readlines()
+#     for query_line in query_lines:
+#         image_name = query_line.split(' ')[0].split('/')[-1]
+#         train_fd1.write(image_name)
+#         train_fd1.write(' ')
+#         train_fd1.write(str(count))
+#         train_fd1.write('\n')
+#         count +=1
+
+# train data stastic
+
+stastics = []
+for i in range(4768):
+    stastics.append(0)
+lines = train_fd.readlines()
+for line in lines:
+    image_name = line.split(' ')[0]
+    pid = eval(line.split(' ')[-1].replace('\n', ''))
+    stastics[pid] +=1
+
+print(stastics)
+print(stastics.index(max(stastics)), max(stastics), min(stastics))
 
 
 

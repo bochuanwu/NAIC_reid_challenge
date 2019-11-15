@@ -7,9 +7,10 @@
 import torch
 from torch import nn
 
-from .backbones.resnet import ResNet, BasicBlock, Bottleneck
-from .backbones.senet import SENet, SEResNetBottleneck, SEBottleneck, SEResNeXtBottleneck
+from .backbones.resnet import ResNet, Bottleneck
+from .backbones.senet import SENet, SEResNetBottleneck
 from .backbones.resnet_ibn_a import resnet50_ibn_a, resnet101_ibn_a
+from .backbones.osnet_ain import osnet_ain_x1_0
 
 
 def weights_init_kaiming(m):
@@ -40,17 +41,8 @@ class Baseline(nn.Module):
 
     def __init__(self, num_classes, last_stride, model_path, neck, neck_feat, model_name, pretrain_choice):
         super(Baseline, self).__init__()
-        if model_name == 'resnet18':
-            self.in_planes = 512
-            self.base = ResNet(last_stride=last_stride, 
-                               block=BasicBlock, 
-                               layers=[2, 2, 2, 2])
-        elif model_name == 'resnet34':
-            self.in_planes = 512
-            self.base = ResNet(last_stride=last_stride,
-                               block=BasicBlock,
-                               layers=[3, 4, 6, 3])
-        elif model_name == 'resnet50':
+
+        if model_name == 'resnet50':
             self.base = ResNet(last_stride=last_stride,
                                block=Bottleneck,
                                layers=[3, 4, 6, 3])
@@ -58,77 +50,25 @@ class Baseline(nn.Module):
             self.base = ResNet(last_stride=last_stride,
                                block=Bottleneck, 
                                layers=[3, 4, 23, 3])
-        elif model_name == 'resnet152':
-            self.base = ResNet(last_stride=last_stride, 
-                               block=Bottleneck,
-                               layers=[3, 8, 36, 3])
-            
+
         elif model_name == 'se_resnet50':
-            self.base = SENet(block=SEResNetBottleneck, 
-                              layers=[3, 4, 6, 3], 
-                              groups=1, 
+            self.base = SENet(block=SEResNetBottleneck,
+                              layers=[3, 4, 6, 3],
+                              groups=1,
                               reduction=16,
-                              dropout_p=None, 
-                              inplanes=64, 
+                              dropout_p=None,
+                              inplanes=64,
                               input_3x3=False,
-                              downsample_kernel_size=1, 
+                              downsample_kernel_size=1,
                               downsample_padding=0,
-                              last_stride=last_stride) 
-        elif model_name == 'se_resnet101':
-            self.base = SENet(block=SEResNetBottleneck, 
-                              layers=[3, 4, 23, 3], 
-                              groups=1, 
-                              reduction=16,
-                              dropout_p=None, 
-                              inplanes=64, 
-                              input_3x3=False,
-                              downsample_kernel_size=1, 
-                              downsample_padding=0,
-                              last_stride=last_stride)
-        elif model_name == 'se_resnet152':
-            self.base = SENet(block=SEResNetBottleneck, 
-                              layers=[3, 8, 36, 3],
-                              groups=1, 
-                              reduction=16,
-                              dropout_p=None, 
-                              inplanes=64, 
-                              input_3x3=False,
-                              downsample_kernel_size=1, 
-                              downsample_padding=0,
-                              last_stride=last_stride)  
-        elif model_name == 'se_resnext50':
-            self.base = SENet(block=SEResNeXtBottleneck,
-                              layers=[3, 4, 6, 3], 
-                              groups=32, 
-                              reduction=16,
-                              dropout_p=None, 
-                              inplanes=64, 
-                              input_3x3=False,
-                              downsample_kernel_size=1, 
-                              downsample_padding=0,
-                              last_stride=last_stride) 
-        elif model_name == 'se_resnext101':
-            self.base = SENet(block=SEResNeXtBottleneck,
-                              layers=[3, 4, 23, 3], 
-                              groups=32, 
-                              reduction=16,
-                              dropout_p=None, 
-                              inplanes=64, 
-                              input_3x3=False,
-                              downsample_kernel_size=1, 
-                              downsample_padding=0,
-                              last_stride=last_stride)
-        elif model_name == 'senet154':
-            self.base = SENet(block=SEBottleneck, 
-                              layers=[3, 8, 36, 3],
-                              groups=64, 
-                              reduction=16,
-                              dropout_p=0.2, 
                               last_stride=last_stride)
         elif model_name == 'resnet50_ibn_a':
             self.base = resnet50_ibn_a(last_stride)
         elif model_name == 'resnet101_ibn_a':
             self.base = resnet101_ibn_a(last_stride)
+        elif model_name == 'osnet_ain':
+            self.in_planes = 512
+            self.base = osnet_ain_x1_0()
 
         if pretrain_choice == 'imagenet':
             self.base.load_param(model_path)

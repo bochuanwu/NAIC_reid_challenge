@@ -8,14 +8,18 @@ import heapq
 from reranking import re_ranking as re_ranking_func
 
 class Evaluator:
-    def __init__(self, model, norm=False, eval_flip=False, re_ranking=False):
+    def __init__(self, model, pcb_model=None, norm=False, eval_flip=False, re_ranking=False, concate=False):
         self.model = model
         self.norm = norm
         self.eval_flip = eval_flip
         self.re_ranking = re_ranking
+        self.pcb_model = pcb_model
+        self.concate = concate
 
     def evaluate(self, queryloader, galleryloader, queryFliploader, galleryFliploader, ranks=200, k1=20, k2=6, lambda_value=0.3):
         self.model.eval()
+        if self.concate:
+            self.pcb_model.eval()
         qf, q_paths = [], []
         for inputs0, inputs1 in zip(queryloader, queryFliploader):
             inputs, _, paths = self._parse_data(inputs0)
@@ -110,13 +114,15 @@ class Evaluator:
 
             clusters[q_paths[i]] = g_paths[np.array(y)].tolist()
 
-        print("results: ", clusters)
+        # print("results: ", clusters)
 
         return clusters
 
     def validation(self, queryloader, galleryloader, queryFliploader, galleryFliploader,re_ranking=False,
                    ranks=[1], k1=20, k2=6, lambda_value=0.3):
         self.model.eval()
+        if self.concate:
+            self.pcb_model.eval()
         qf, q_pids = [], []
         for inputs0, inputs1 in zip(queryloader, queryFliploader):
             inputs, pids, _ = self._parse_data(inputs0)
@@ -204,8 +210,15 @@ class Evaluator:
         return imgs.cuda(), pids, image_path
 
     def _forward(self, inputs):
-        with torch.no_grad():
-            feature = self.model(inputs)
+        if self.concate:
+            with torch.no_grad():
+                feature0 = self.model(inputs)
+                feature1 = self.pcb_model(inputs)
+                # print(feature0.size(), feature1.size())
+                feature = torch.cat((feature0, feature1), 1)
+        else:
+            with torch.no_grad():
+                feature = self.model(inputs)
         return feature.cpu()
 
     def eval_func_gpu(self, distmat, q_pids, g_pids, max_rank=200):

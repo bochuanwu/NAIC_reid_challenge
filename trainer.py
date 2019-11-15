@@ -96,7 +96,19 @@ class cls_tripletTrainer:
 
     def _forward(self):
         score, feat = self.model(self.data)
-        self.loss = self.criterion(score, feat, self.target)
+        if 'pcb' == self.opt.model_name:
+            loss = 0
+            for i in range(self.opt.num_parts):
+                loss += self.criterion(score[i], feat, self.target)
+            self.loss = loss / self.opt.num_parts
+        elif 'MGN' == self.opt.model_name:
+            tri_loss = [self.criterion(score[0], f, self.target, weight_s = 0) for f in feat]
+            soft_loss = [self.criterion(s, feat[0], self.target, weight_t = 0) for s in score]
+
+            self.loss = sum(tri_loss) / len(feat) + sum(soft_loss) / len(score)
+
+        else:
+            self.loss = self.criterion(score, feat, self.target)
 
     def _backward(self):
         self.loss.backward()
