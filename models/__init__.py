@@ -1,7 +1,7 @@
 # encoding: utf-8
 """
-@author:  sherlock
-@contact: sherlockliao01@gmail.com
+@author:  zhoumi
+@contact: zhoumi281571814@126.com
 """
 
 from .baseline import Baseline

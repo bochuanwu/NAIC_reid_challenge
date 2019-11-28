@@ -1,4 +1,8 @@
 # encoding: utf-8
+"""
+@author:  zhoumi
+@contact: zhoumi281571814@126.com
+"""
 import os
 import sys
 from os import path as osp

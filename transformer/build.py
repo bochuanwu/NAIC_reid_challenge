@@ -1,7 +1,7 @@
 # encoding: utf-8
 """
-@author:  liaoxingyu
-@contact: liaoxingyu2@jd.com
+@author:  zhoumi
+@contact: zhoumi281571814@126.com
 """
 
 import torchvision.transforms as T
