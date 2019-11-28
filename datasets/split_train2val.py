@@ -1,13 +1,13 @@
 import glob
 import random
 
-val_num = 500
-train_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/train/train_list.txt'
+# val_num = 500
+# train_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/train/train_list.txt'
 # train_list1 = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/train_list_new1.txt'
 # val_query_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/val_query_list.txt'
 # val_gallery_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/val_gallery_list.txt'
 
-train_fd = open(train_list, 'r')
+# train_fd = open(train_list, 'r')
 # train_fd1 = open(train_list1, 'r')
 # print(len(train_fd.readlines()), len(train_fd1.readlines()))
 
@@ -141,18 +141,39 @@ train_fd = open(train_list, 'r')
 
 # train data stastic
 
-stastics = []
-for i in range(4768):
-    stastics.append(0)
-lines = train_fd.readlines()
-for line in lines:
-    image_name = line.split(' ')[0]
-    pid = eval(line.split(' ')[-1].replace('\n', ''))
-    stastics[pid] +=1
+# stastics = []
+# for i in range(4768):
+#     stastics.append(0)
+# lines = train_fd.readlines()
+# for line in lines:
+#     image_name = line.split(' ')[0]
+#     pid = eval(line.split(' ')[-1].replace('\n', ''))
+#     stastics[pid] +=1
+#
+# print(stastics)
+# print(stastics.index(max(stastics)), max(stastics), min(stastics))
 
-print(stastics)
-print(stastics.index(max(stastics)), max(stastics), min(stastics))
 
+fd = open('/Users/zhoumi/git-project/dataset/tx_dataset_reid/train_list_new_test.txt', 'a')
+
+img_paths = glob.glob('/Users/zhoumi/git-project/dataset/tx_dataset_reid/pesudo/*png')
+print(len(img_paths))
+
+pairs = {}
+rid = 2464
+for img_path in img_paths:
+    img_name = img_path.split('/')[-1]
+    id = img_path.split('/')[-1].split('_')[0]
+    print(img_name, id)
+    if id in pairs:
+        rid = pairs[id]
+    else:
+        rid +=1
+        pairs[id] = rid
+    # fd.write(img_name)
+    # fd.write(' ')
+    # fd.write(str(rid))
+    # fd.write('\n')
 
 
 

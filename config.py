@@ -47,18 +47,22 @@ class DefaultConfig(object):
     bnneck = 'bnneck'  # bnneck, no
     pretrained_choice = 'imagenet' #'imagenet' or 'self'
     num_parts = 6
+    attention = False
+    feat = 256
+    sep_bn = False
 
     # test option
     neck_feat = 'after' #before after
     eval_flip = False
     re_ranking = False
     norm = False
+    crop_validation = False
 
     # miscs
     print_freq = 10
     eval_step = 10
     save_dir = './pytorch-ckpt/market'
-    workers = 10
+    workers = 1
     start_epoch = 0
     best_rank = -np.inf
 

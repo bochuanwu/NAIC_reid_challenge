@@ -7,10 +7,10 @@
 import torchvision.transforms as T
 
 from .transforms import RandomErasing
+from .crop import center_crop, crop_lb, crop_lt, crop_rb, crop_rt
 
-
-def build_transforms(opt, is_train=True, flip=False):
-    normalize_transform = T.Normalize(mean=opt.PIXEL_MEAN, std=opt.PIXEL_STD)
+def build_transforms(opt, is_train=True, flip=False, crop = ''):
+    normalize_transform = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     if is_train:
         transform = T.Compose([
             T.Resize(opt.SIZE_TRAIN),
@@ -30,10 +30,46 @@ def build_transforms(opt, is_train=True, flip=False):
                 normalize_transform
             ])
         else:
-            transform = T.Compose([
-                T.Resize(opt.SIZE_TEST),
-                T.ToTensor(),
-                normalize_transform
-            ])
+            if crop == 'center':
+                transform = T.Compose([
+                    T.Resize([x+10 for x in opt.SIZE_TEST]),
+                    center_crop(384, 128),
+                    T.ToTensor(),
+                    normalize_transform
+                ])
+            elif crop == 'lt':
+                transform = T.Compose([
+                    T.Resize([x+10 for x in opt.SIZE_TEST]),
+                    crop_lt(384, 128),
+                    T.ToTensor(),
+                    normalize_transform
+                ])
+            elif crop == 'rt':
+                transform = T.Compose([
+                    T.Resize([x+10 for x in opt.SIZE_TEST]),
+                    crop_rt(384, 128),
+                    T.ToTensor(),
+                    normalize_transform
+                ])
+            elif crop == 'lb':
+                transform = T.Compose([
+                    T.Resize([x+10 for x in opt.SIZE_TEST]),
+                    crop_lb(384, 128),
+                    T.ToTensor(),
+                    normalize_transform
+                ])
+            elif crop == 'rb':
+                transform = T.Compose([
+                    T.Resize([x+10 for x in opt.SIZE_TEST]),
+                    crop_rb(384, 128),
+                    T.ToTensor(),
+                    normalize_transform
+                ])
+            else:
+                transform = T.Compose([
+                    T.Resize(opt.SIZE_TEST),
+                    T.ToTensor(),
+                    normalize_transform
+                ])
 
     return transform

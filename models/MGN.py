@@ -6,6 +6,7 @@ import torch.nn.functional as F
 # from .backbones.resnet import ResNet, Bottleneck
 from .backbones.resnet_ibn_a import ResNet_IBN as ResNet
 from .backbones.resnet_ibn_a import Bottleneck_IBN as Bottleneck
+from .backbones.attention import CAM_Module, PAM_Module
 
 def weights_init_kaiming(m):
     classname = m.__class__.__name__
@@ -22,11 +23,14 @@ def weights_init_kaiming(m):
             nn.init.constant_(m.bias, 0.0)
 
 class MGN(nn.Module):
-    def __init__(self, num_classes, pretrain_choice, model_path, neck, neck_feat, last_stride = 2, pool = 'avg', feats = 256):
+    def __init__(self, num_classes, pretrain_choice, model_path, neck, neck_feat,
+                 attention = True, sep_bn = True, last_stride = 2, pool = 'avg', feats = 256):
         super(MGN, self).__init__()
         num_classes = num_classes
         self.neck = neck
         self.neck_feat = neck_feat
+        self.attention = attention
+        self.sep_bn = sep_bn
 
         resnet = ResNet(last_stride=last_stride, block=Bottleneck, layers=[3, 4, 6, 3])
 
@@ -96,20 +100,38 @@ class MGN(nn.Module):
             self.fc_id_256_2_1 = nn.Linear(feats, num_classes)
             self.fc_id_256_2_2 = nn.Linear(feats, num_classes)
         elif self.neck == 'bnneck':
-            self.bottleneck = nn.BatchNorm1d(256)
+            self.bottleneck = nn.BatchNorm1d(feats)
             self.bottleneck.bias.requires_grad_(False)  # no shift
 
-            self.fc_id_2048_0 = nn.Linear(feats, num_classes)
-            self.fc_id_2048_1 = nn.Linear(feats, num_classes)
-            self.fc_id_2048_2 = nn.Linear(feats, num_classes)
+            self.fc_id_2048_0 = nn.Linear(feats, num_classes)#, bias=False)
+            self.fc_id_2048_1 = nn.Linear(feats, num_classes)#, bias=False)
+            self.fc_id_2048_2 = nn.Linear(feats, num_classes)#, bias=False)
 
-            self.fc_id_256_1_0 = nn.Linear(feats, num_classes)
-            self.fc_id_256_1_1 = nn.Linear(feats, num_classes)
-            self.fc_id_256_2_0 = nn.Linear(feats, num_classes)
-            self.fc_id_256_2_1 = nn.Linear(feats, num_classes)
-            self.fc_id_256_2_2 = nn.Linear(feats, num_classes)
+            self.fc_id_256_1_0 = nn.Linear(feats, num_classes)#, bias=False)
+            self.fc_id_256_1_1 = nn.Linear(feats, num_classes)#, bias=False)
+            self.fc_id_256_2_0 = nn.Linear(feats, num_classes)#, bias=False)
+            self.fc_id_256_2_1 = nn.Linear(feats, num_classes)#, bias=False)
+            self.fc_id_256_2_2 = nn.Linear(feats, num_classes)#, bias=False)
 
             self.bottleneck.apply(weights_init_kaiming)
+
+            if self.sep_bn:
+                self.bottleneck_fg1 = copy.deepcopy(self.bottleneck)
+                self.bottleneck_fg2 = copy.deepcopy(self.bottleneck)
+                self.bottleneck_fg3 = copy.deepcopy(self.bottleneck)
+                self.bottleneck_l0g2 = copy.deepcopy(self.bottleneck)
+                self.bottleneck_l1g2 = copy.deepcopy(self.bottleneck)
+                self.bottleneck_l0g3 = copy.deepcopy(self.bottleneck)
+                self.bottleneck_l1g3 = copy.deepcopy(self.bottleneck)
+                self.bottleneck_l2g3 = copy.deepcopy(self.bottleneck)
+
+        if self.attention:
+            self.cam_global = CAM_Module(2048)
+            self.pam_global = PAM_Module(2048)
+            self.cam_local0 = CAM_Module(2048)
+            self.pam_local0 = PAM_Module(2048)
+            self.cam_local1 = CAM_Module(2048)
+            self.pam_local1 = PAM_Module(2048)
 
         self._init_fc(self.fc_id_2048_0)
         self._init_fc(self.fc_id_2048_1)
@@ -145,9 +167,18 @@ class MGN(nn.Module):
         p2 = self.p2(x)
         p3 = self.p3(x)
 
-        zg_p1 = self.maxpool_zg_p1(p1)
-        zg_p2 = self.maxpool_zg_p2(p2)
-        zg_p3 = self.maxpool_zg_p3(p3)
+        if self.attention:
+            p1_cam = self.cam_global(p1) + self.pam_global(p1)
+            p2_cam = self.cam_local0(p2) + self.pam_local0(p2)
+            p3_cam = self.cam_local1(p3) + self.pam_local1(p3)
+        else:
+            p1_cam = p1
+            p2_cam = p2
+            p3_cam = p3
+
+        zg_p1 = self.maxpool_zg_p1(p1_cam)
+        zg_p2 = self.maxpool_zg_p2(p2_cam)
+        zg_p3 = self.maxpool_zg_p3(p3_cam)
 
         zp2 = self.maxpool_zp2(p2)
         z0_p2 = zp2[:, :, 0:1, :]
@@ -183,14 +214,24 @@ class MGN(nn.Module):
             f1_p3_feat = f1_p3
             f2_p3_feat = f2_p3
         elif self.neck == 'bnneck':
-            fg_p1_feat = self.bottleneck(fg_p1)
-            fg_p2_feat = self.bottleneck(fg_p2)
-            fg_p3_feat = self.bottleneck(fg_p3)
-            f0_p2_feat = self.bottleneck(f0_p2)
-            f1_p2_feat = self.bottleneck(f1_p2)
-            f0_p3_feat = self.bottleneck(f0_p3)
-            f1_p3_feat = self.bottleneck(f1_p3)
-            f2_p3_feat = self.bottleneck(f2_p3)
+            if self.sep_bn:
+                fg_p1_feat = self.bottleneck_fg1(fg_p1)
+                fg_p2_feat = self.bottleneck_fg2(fg_p2)
+                fg_p3_feat = self.bottleneck_fg3(fg_p3)
+                f0_p2_feat = self.bottleneck_l0g2(f0_p2)
+                f1_p2_feat = self.bottleneck_l1g2(f1_p2)
+                f0_p3_feat = self.bottleneck_l0g3(f0_p3)
+                f1_p3_feat = self.bottleneck_l1g3(f1_p3)
+                f2_p3_feat = self.bottleneck_l2g3(f2_p3)
+            else:
+                fg_p1_feat = self.bottleneck(fg_p1)
+                fg_p2_feat = self.bottleneck(fg_p2)
+                fg_p3_feat = self.bottleneck(fg_p3)
+                f0_p2_feat = self.bottleneck(f0_p2)
+                f1_p2_feat = self.bottleneck(f1_p2)
+                f0_p3_feat = self.bottleneck(f0_p3)
+                f1_p3_feat = self.bottleneck(f1_p3)
+                f2_p3_feat = self.bottleneck(f2_p3)
 
         if self.training:
             l_p1 = self.fc_id_2048_0(fg_p1_feat)

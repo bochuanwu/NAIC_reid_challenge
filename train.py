@@ -95,6 +95,66 @@ def train(**kwargs):
         pin_memory=pin_memory
     )
 
+    queryCenterloader = DataLoader(
+        ImageDataset(query_dataset, transform=build_transforms(opt, is_train=False, crop='center')),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
+
+    galleryCenterloader = DataLoader(
+        ImageDataset(gallery_dataset, transform=build_transforms(opt, is_train=False, crop='center')),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
+
+    queryLtloader = DataLoader(
+        ImageDataset(query_dataset, transform=build_transforms(opt, is_train=False, crop='lt')),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
+
+    galleryLtloader = DataLoader(
+        ImageDataset(gallery_dataset, transform=build_transforms(opt, is_train=False, crop='lt')),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
+
+    queryRtloader = DataLoader(
+        ImageDataset(query_dataset, transform=build_transforms(opt, is_train=False, crop='rt')),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
+
+    galleryRtloader = DataLoader(
+        ImageDataset(gallery_dataset, transform=build_transforms(opt, is_train=False, crop='rt')),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
+
+    queryRbloader = DataLoader(
+        ImageDataset(query_dataset, transform=build_transforms(opt, is_train=False, crop='rb')),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
+
+    galleryRbloader = DataLoader(
+        ImageDataset(gallery_dataset, transform=build_transforms(opt, is_train=False, crop='rb')),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
+
+    queryLbloader = DataLoader(
+        ImageDataset(query_dataset, transform=build_transforms(opt, is_train=False, crop='lb')),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
+
+    galleryLbloader = DataLoader(
+        ImageDataset(gallery_dataset, transform=build_transforms(opt, is_train=False, crop='lb')),
+        batch_size=opt.test_batch, num_workers=opt.workers,
+        pin_memory=pin_memory
+    )
+
     print('initializing model ...')
 
     model = build_model(opt)
@@ -138,9 +198,21 @@ def train(**kwargs):
 
         # skip if not save model
         if opt.eval_step > 0 and (epoch + 1) % opt.eval_step == 0 or (epoch + 1) == opt.max_epoch:
-            rank1 = reid_evaluator.validation(queryloader, galleryloader, queryFliploader, galleryFliploader)
+            rank1 = reid_evaluator.validation(queryloader, galleryloader, queryFliploader, galleryFliploader,
+                                              queryCenterloader, galleryCenterloader,
+                                              queryLtloader, galleryLtloader,
+                                              queryRtloader, galleryRtloader,
+                                              queryLbloader, galleryLbloader,
+                                              queryRbloader, galleryRbloader)
             print('start re_ranking......')
-            _ = reid_evaluator.validation(queryloader, galleryloader, queryFliploader, galleryFliploader, re_ranking=True)
+            _ = reid_evaluator.validation(queryloader, galleryloader,
+                                          queryFliploader, galleryFliploader,
+                                          queryCenterloader, galleryCenterloader,
+                                          queryLtloader, galleryLtloader,
+                                          queryRtloader, galleryRtloader,
+                                          queryLbloader, galleryLbloader,
+                                          queryRbloader, galleryRbloader,
+                                          re_ranking=True)
             is_best = rank1 > best_rank1
             if is_best:
                 best_rank1 = rank1
