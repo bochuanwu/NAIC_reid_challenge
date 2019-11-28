@@ -1,13 +1,24 @@
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=1,2
 python train.py train --label_smooth on \
+                      --SIZE_TRAIN [384,128] \
+                      --SIZE_TEST [384,128] \
+                      --PIXEL_MEAN [0.0973,0.1831,0.2127] --PIXEL_STD [0.0860,0.0684,0.0964] \
+                      --RE_PROB 0.5 \
+                      --attention False \
+                      --lr 0.00035 \
+                      --NUM_CLASS 3465 \
                       --loss_type triplet \
-                      --train_batch 96 \
-                      --num_instances 3 \
+                      --triplet_weight 1.0 \
+                      --train_batch 64 \
+                      --num_instances 4 \
                       --margin None \
-                      --model_name resnet101_ibn_a \
+                      --model_name MGN \
                       --last_stride 1\
+                      --feat 512 \
                       --bnneck bnneck \
-                      --pretrained_model /home/zhoumi/.torch/models/r101_ibn_a.pth \
-                      --max_epoch 150 \
+                      --pretrained_model /data/zhoumi/.torch/models/r50_ibn_a.pth \
+                      --max_epoch 250 \
                       --sampler_new True \
-                      --save_dir ./pytorch-ckpt/r101_ibn_a_instance3_new
+                      --optim adam \
+                      --norm False \
+                      --save_dir ./pytorch-ckpt/mgn_ibn_bnneck_eraParam_feat512_sepbn_fc/
