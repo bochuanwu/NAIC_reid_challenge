@@ -1,0 +1,50 @@
+model:
+  name: 'duallatt_seresnet101v2'
+  pretrained: True
+  load_weights: ''
+
+data:
+  type: 'image'
+  sources: ['kescireid']
+  targets: ['kescireid']
+  height: 256
+  width: 128
+  combineall: False
+  is_train: True # train(include val) or inference. Default is True.
+  transforms: ['random_flip', 'random_crop', 'random_erase']
+  save_dir: 'log/dualattv2_ser101_ibn_softmax_triplet_256x128_adam_cosine_v1.yaml'
+sampler:
+  train_sampler: 'RandomIdentitySampler'
+loss:
+  name: 'triplet'
+  softmax:
+    label_smooth: True
+  triplet:
+    metric: 'cosine'
+    weight_t: 1.  # weight to balance hard triplet loss
+    weight_x: 1.5  # weight to balance cross entropy loss
+train:
+  optim: 'adam'
+  lr: 3e-4
+  max_epoch: 120
+  batch_size: 32
+  fixbase_epoch: 0
+  open_layers: []
+  staged_lr: False
+  lr_scheduler: 'warmup_linear'
+  stepsize: [40, 70]
+  gamma: 0.1
+  seed: 2019
+  warmup_factor: 0.01
+  warmup_iters: 10
+
+test:
+  batch_size: 100
+  dist_metric: 'cosine'
+  normalize_feature: False
+  evaluate: False # train stage
+  eval_freq: 5
+  rerank: False
+  visactmap: False
+  visrank: False  # visualize ranked results (only available when cfg.test.evaluate=True)
+  visrank_topk: 20  # top-k ranks to visualize
