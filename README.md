@@ -20,3 +20,6 @@ sh validate.sh
 执行test.sh，可直接生成大赛json文件
 
 sh test.sh
+
+3、预训练模型下载地址：
+https://drive.google.com/drive/folders/1thS2B8UOSBi_cJX6zRy6YYRwz_nVFI_S
