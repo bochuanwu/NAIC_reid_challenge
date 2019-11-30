@@ -191,7 +191,7 @@ class resnet50_ibn_dropblock_pa_ca(nn.Module):
         backbone=resnet50_ibn_a(last_stride)
 
         if pretrain_choice == 'imagenet':
-            self.base.load_param(model_path)
+            backbone.load_param(model_path)
             print('Loading pretrained ImageNet model......')
 
         self.common_branch=ResNetCommonBranch(self,backbone)

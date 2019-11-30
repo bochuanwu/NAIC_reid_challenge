@@ -21,7 +21,7 @@ def build_model(opt):
     elif opt.model_name == 'StackPCBv2':
         model = StackPCBv2(opt.NUM_CLASS, opt.pretrained_choice, opt.pretrained_model, opt.bnneck, opt.neck_feat, last_stride = 2)
     elif opt.model_name == 'StackPCB':
-        model = StackPCB(opt.NUM_CLASS, opt.pretrained_choice, opt.pretrained_model, last_stride = 2)
+        model = StackPCB(opt.NUM_CLASS, opt.pretrained_choice, opt.pretrained_model, last_stride = 1)
     elif opt.model_name == 'drop_block':
         model = resnet50_ibn_dropblock_pa_ca(opt.NUM_CLASS, opt.pretrained_model, opt.pretrained_choice, last_stride = 2)
     else:
