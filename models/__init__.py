@@ -8,6 +8,7 @@ from .baseline import Baseline
 from .pcb import pcb_p6, pcb_p4
 from .MGN import MGN
 from .stack_pcbv2 import StackPCBv2
+from .stack_pcb import StackPCB
 
 def build_model(opt):
 
@@ -18,6 +19,8 @@ def build_model(opt):
                    opt.bnneck, opt.neck_feat, attention=opt.attention, sep_bn=opt.sep_bn, last_stride = 2, pool = 'avg', feats = opt.feat)
     elif opt.model_name == 'StackPCBv2':
         model = StackPCBv2(opt.NUM_CLASS, opt.pretrained_choice, opt.pretrained_model, opt.bnneck, opt.neck_feat, last_stride = 2)
+    elif opt.model_name == 'StackPCB':
+        model = StackPCB(opt.NUM_CLASS, opt.pretrained_choice, opt.pretrained_model, last_stride = 2)
     else:
         model = Baseline(opt.NUM_CLASS, opt.last_stride, opt.pretrained_model,
                          opt.bnneck, opt.neck_feat, opt.model_name, opt.pretrained_choice)

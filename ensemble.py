@@ -14,6 +14,7 @@ import os
 
 def weightSum(paths, weights=None):
     results = [torch.load(path, map_location='cpu') for path in paths]
+
     anchor = results[0]
     anchor_query_path = anchor['query_path']
     anchor_query_path = list(map(os.path.basename, anchor_query_path))
@@ -21,20 +22,32 @@ def weightSum(paths, weights=None):
     anchor_gallery_path = list(map(os.path.basename, anchor_gallery_path))
     anchor_dist_mat = anchor['dist_mat']
 
-    dist_mats = [anchor_dist_mat]
-    for result in results[1:]:
-        res = np.zeros(shape=anchor_dist_mat.shape)
+    anchor_query_path = np.asarray(anchor_query_path, np.str)
+    anchor_gallery_path = np.asarray(anchor_gallery_path, np.str)
+
+    query_idx = np.argsort(anchor_query_path)
+    anchor_query_path = anchor_query_path[query_idx]
+
+    gallery_idx = np.argsort(anchor_gallery_path)
+    anchor_gallery_path = anchor_gallery_path[gallery_idx]
+
+    anchor_dist_mat = anchor_dist_mat[query_idx, :]
+    anchor_dist_mat = anchor_dist_mat[:, gallery_idx]
+
+    dist_mats = []
+    for result in results:
         query_path = result['query_path']
         gallery_path = result['gallery_path']
         dist_mat = result['dist_mat']
-
-        for ii, qpath in enumerate(query_path):
-            qidx = anchor_query_path.index(os.path.basename(qpath))
-            for jj, gpath in enumerate(gallery_path):
-                gidx = anchor_gallery_path.index((os.path.basename(gpath)))
-                res[qidx, gidx] = dist_mat[ii, jj]
-
-        dist_mats.append(res)
+        query_path = np.asarray(query_path, np.str)
+        gallery_path = np.asarray(gallery_path, np.str)
+        query_idx = np.argsort(query_path)
+        assert (query_path[query_idx] != anchor_query_path).sum() == 0
+        gallery_idx = np.argsort(gallery_path)
+        assert (gallery_path[gallery_idx] != anchor_gallery_path).sum() == 0
+        dist_mat = dist_mat[query_idx, :]
+        dist_mat = dist_mat[:, gallery_idx]
+        dist_mats.append(dist_mat)
 
     res = np.zeros(anchor_dist_mat.shape)
     if weights is not None:
@@ -45,7 +58,11 @@ def weightSum(paths, weights=None):
             res += dist_mat
         res /= len(dist_mats)
         print('...')
-    torch.save(res, './final_distmat.pth')
+    save_dict = {'dist_mat': res,
+                 'query_path': anchor_query_path.tolist(),
+                 'gallery_path': anchor_gallery_path.tolist()}
+
+    torch.save(save_dict, './final_distmat.pth')
     _, indices = torch.topk(torch.from_numpy(res), k=200, dim=1, largest=False)
     sumbit = defaultdict(list)
     anchor_query_path = np.asarray(anchor_query_path, np.str)
@@ -58,14 +75,21 @@ def weightSum(paths, weights=None):
 
 
 if __name__ == '__main__':
-    # model_results = glob.glob('model_results/*')
-    model_results = ['model_results/mgn_ibn_bnneck_eraParam_8614.pth',
-                     'model_results/mgn_ibn_bnneck_eraParam_feat512_sepbn_8688.pth',
-                     # 'model_results/mgn_ibn_bnneck_eraParam_feat512_8634.pth',
-                     'model_results/mgn_ibn_bnneck_eraParam_feat512.pth',
-                     'model_results/spcbv2_8675.pth',
-                     'model_results/dual_ser101_ensemble_8638.pth',
-                     'model_results/StackPCBv2_ibn_bnneck_862.pth']
+    model_results = [
+        'model_results_B/duallattv2_ensembele_mgn_feat512_sepbn_mgnv3.pth',
+        'model_results_B/mgn_ibn_bnneck_eraParam.pth',
+        'model_results_B/mgn_ibn_bnneck_eraParam_b.pth',
+        'model_results_B/mgn_ibn_bnneck_eraParam_feat512_128_b.pth',
+        'model_results_B/mgn_ibn_bnneck_eraParam_feat512.pth',
+        'model_results_B/mgn_ibn_bnneck_eraParam_feat512_b.pth',
+        'model_results_B/mgn_ibn_bnneck_eraParam_feat512_sepbn_fc.pth',
+        'model_results_B/mgnv2_512.pth',
+        'model_results_B/resibn50_pa_ca_dropblock_tta_b.pth',
+        'model_results_B/SPCBv2.pth',
+        'model_results_B/StackPCBv2_ibn_bnneck.pth'
 
-    print(model_results)
-    weightSum(model_results)
+    ]
+    weights = [0.15, 0.12, 0.05, 0.12, 0.05, 0.12, 0.05, 0.12, 0.05, 0.12, 0.05]
+
+
+    weightSum(model_results, weights)

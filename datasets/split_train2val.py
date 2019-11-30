@@ -2,17 +2,35 @@ import glob
 import random
 
 # val_num = 500
-# train_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/train/train_list.txt'
+train_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/train/train_list.txt'
 # train_list1 = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/train_list_new1.txt'
-# val_query_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/val_query_list.txt'
-# val_gallery_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/val_gallery_list.txt'
+val_query_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/query_b_list.txt'
+val_gallery_list = '/Users/zhoumi/git-project/dataset/tx_dataset_reid/gallery_b_list.txt'
+#
+# query_path = glob.glob('/Users/zhoumi/git-project/dataset/tx_dataset_reid/test/query_b/*png')
+# gallery_path = glob.glob('/Users/zhoumi/git-project/dataset/tx_dataset_reid/test/gallery_b/*png')
 
 # train_fd = open(train_list, 'r')
 # train_fd1 = open(train_list1, 'r')
 # print(len(train_fd.readlines()), len(train_fd1.readlines()))
 
-# val_q_fd = open(val_query_list, 'r')
-# val_g_fd = open(val_gallery_list, 'r')
+# val_q_fd = open(val_query_list, 'w')
+# val_g_fd = open(val_gallery_list, 'w')
+#
+# for img_path in query_path:
+#     img_name = img_path.split('/')[-1]
+#     val_q_fd.write(img_name)
+#     val_q_fd.write(' ')
+#     val_q_fd.write(str(0))
+#     val_q_fd.write('\n')
+#
+# for img_path in gallery_path:
+#     img_name = img_path.split('/')[-1]
+#     val_g_fd.write(img_name)
+#     val_g_fd.write(' ')
+#     val_g_fd.write(str(0))
+#     val_g_fd.write('\n')
+
 
 # train = len(train_fd.readlines())
 # gallery = len(val_g_fd.readlines())
@@ -41,48 +59,48 @@ import random
 
 
 
-# with open('/Users/zhoumi/git-project/dataset/tx_dataset_reid/train/train_list_new.txt', 'r') as fd:
-#
-#     # train_fd = open(train_list, 'w')
-#     # val_q_fd = open(val_query_list, 'w')
-#     # val_g_fd = open(val_gallery_list, 'w')
-#
-#     lines = fd.readlines()
-#     last_pid = 0
-#     t_w = True
-#     for line in lines:
-#         pid = eval(line.split(' ')[-1].replace('\n', ''))
-#         image_name = line.split(' ')[0].split('/')[-1]
-#
-#         if pid == last_pid:
-#             if t_w:
-#                 train_fd.write(image_name)
-#                 train_fd.write(' ')
-#                 train_fd.write(str(pid))
-#                 train_fd.write('\n')
-#             else:
-#                 val_g_fd.write(image_name)
-#                 val_g_fd.write(' ')
-#                 val_g_fd.write(str(pid))
-#                 val_g_fd.write('\n')
-#
-#         else:
-#             rad = random.random()
-#             if rad < 0.1:
-#                 t_w = False
-#                 val_q_fd.write(image_name)
-#                 val_q_fd.write(' ')
-#                 val_q_fd.write(str(pid))
-#                 val_q_fd.write('\n')
-#
-#             else:
-#                 t_w = True
-#                 train_fd.write(image_name)
-#                 train_fd.write(' ')
-#                 train_fd.write(str(pid))
-#                 train_fd.write('\n')
-#
-#         last_pid = pid
+with open('/Users/zhoumi/git-project/dataset/tx_dataset_reid/train/train_list_new.txt', 'r') as fd:
+
+    train_fd = open(train_list, 'w')
+    val_q_fd = open(val_query_list, 'w')
+    val_g_fd = open(val_gallery_list, 'w')
+
+    lines = fd.readlines()
+    last_pid = 0
+    t_w = True
+    for line in lines:
+        pid = eval(line.split(' ')[-1].replace('\n', ''))
+        image_name = line.split(' ')[0].split('/')[-1]
+
+        if pid == last_pid:
+            if t_w:
+                train_fd.write(image_name)
+                train_fd.write(' ')
+                train_fd.write(str(pid))
+                train_fd.write('\n')
+            else:
+                val_g_fd.write(image_name)
+                val_g_fd.write(' ')
+                val_g_fd.write(str(pid))
+                val_g_fd.write('\n')
+
+        else:
+            rad = random.random()
+            if rad < 0.1:
+                t_w = False
+                val_q_fd.write(image_name)
+                val_q_fd.write(' ')
+                val_q_fd.write(str(pid))
+                val_q_fd.write('\n')
+
+            else:
+                t_w = True
+                train_fd.write(image_name)
+                train_fd.write(' ')
+                train_fd.write(str(pid))
+                train_fd.write('\n')
+
+        last_pid = pid
 
     # import collections
     # stastic = []
@@ -154,26 +172,47 @@ import random
 # print(stastics.index(max(stastics)), max(stastics), min(stastics))
 
 
-fd = open('/Users/zhoumi/git-project/dataset/tx_dataset_reid/train_list_new_test.txt', 'a')
-
-img_paths = glob.glob('/Users/zhoumi/git-project/dataset/tx_dataset_reid/pesudo/*png')
-print(len(img_paths))
-
-pairs = {}
+fd = open('/Users/zhoumi/git-project/dataset/tx_dataset_reid/train_list_new_b.txt', 'a')
+#
+# img_paths = glob.glob('/Users/zhoumi/git-project/dataset/tx_dataset_reid/pesudo/*png')
+# print(len(img_paths))
+#
+# pairs = {}
 rid = 2464
-for img_path in img_paths:
-    img_name = img_path.split('/')[-1]
-    id = img_path.split('/')[-1].split('_')[0]
-    print(img_name, id)
-    if id in pairs:
-        rid = pairs[id]
-    else:
-        rid +=1
-        pairs[id] = rid
+# for img_path in img_paths:
+#     img_name = img_path.split('/')[-1]
+#     id = img_path.split('/')[-1].split('_')[0]
+#     print(img_name, id)
+#     if id in pairs:
+#         rid = pairs[id]
+#     else:
+#         rid +=1
+#         pairs[id] = rid
     # fd.write(img_name)
     # fd.write(' ')
     # fd.write(str(rid))
     # fd.write('\n')
+
+
+#add test in train
+import os
+import shutil
+face_ids = glob.glob('/Users/zhoumi/git-project/dataset/tx_dataset_reid/test2/*')
+
+for face_id in face_ids:
+    img_paths = glob.glob(os.path.join(face_id, '*png'))
+    rid +=1
+
+    for img_path in img_paths:
+        img_name =img_path.split('/')[-1]
+
+        shutil.copy(img_path, os.path.join('/Users/zhoumi/git-project/dataset/tx_dataset_reid/train1', img_name))
+        print(img_name)
+        fd.write(img_name)
+        fd.write(' ')
+        fd.write(str(rid))
+        fd.write('\n')
+
 
 
 
