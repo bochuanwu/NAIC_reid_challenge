@@ -7,6 +7,7 @@
 import numpy as np
 import torch
 import math
+import torch.nn as nn
 from torch.nn import Module, Sequential, Conv2d, ReLU,AdaptiveMaxPool2d, AdaptiveAvgPool2d, \
     NLLLoss, BCELoss, CrossEntropyLoss, AvgPool2d, MaxPool2d, Parameter, Linear, Sigmoid, Softmax, Dropout, Embedding
 from torch.nn import functional as F
@@ -81,3 +82,25 @@ class CAM_Module(Module):
 
         out = self.gamma*out + x
         return out
+
+class ShallowCAM(nn.Module):
+
+    def __init__(self, use, feature_dim: int):
+
+        super().__init__()
+        self.input_feature_dim = feature_dim
+
+        # use = True
+
+        if use:
+            self._cam_module = cam_module = CAM_Module(self.input_feature_dim)
+            self._cam_module_abc = cam_module  # Forward Compatibility
+        else:
+            self._cam_module = None
+
+    def forward(self, x):
+
+        if self._cam_module is not None:
+            x = self._cam_module(x)
+
+        return x
