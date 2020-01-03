@@ -1,0 +1,57 @@
+model:
+  name: 'mgnv4_resnet50_512'
+  pretrained: True
+  load_weights: 'log/mgnv4_512_r50_ibn_softmax_triplet_384x128_adam_v2.yaml/model-best-score.pth.tar'
+
+data:
+  type: 'image'
+  sources: ['kescireid']
+  targets: ['kescireid']
+  height: 384
+  width: 128
+  combineall: False
+  is_train: False # train(include val) or inference. Default is True.
+  transforms: ['random_flip', 'random_crop', 'random_erase', 'random_rotation']   
+  save_dir: 'log/mgnv4_512_r50_ibn_softmax_triplet_384x128_adam_v2.yaml' 
+sampler:  
+  train_sampler: 'RandomBalancedIdentitySampler'
+  num_instances: 4
+loss:
+  name: 'triplet'
+  loss_reduce: 'sum'
+  softmax:
+    label_smooth: True  
+  triplet:
+    margin: 0.
+    weight_t: 5.  # weight to balance hard triplet loss
+    weight_x: 1.  # weight to balance cross entropy loss
+rerank:
+  k1: 6
+  k2: 2
+  lambda_value: 0.3
+train:
+  optim: 'adam'
+  lr: 7e-4 
+  apex: False
+  max_epoch: 400
+  batch_size: 160
+  fixbase_epoch: 0
+  open_layers: []
+  staged_lr: False
+  lr_scheduler: 'warmup_linear'
+  stepsize: [150, 300]
+  gamma: 0.1
+  seed: 2019
+  warmup_factor: 0.1
+  warmup_iters: 10
+
+test:
+  batch_size: 1000
+#  dist_metric: 'cosine'
+  normalize_feature: True
+  evaluate: False # train stage
+  eval_freq: 5
+  rerank: True
+  visactmap: False
+  visrank: False  # visualize ranked results (only available when cfg.test.evaluate=True)
+  visrank_topk: 20  # top-k ranks to visualize

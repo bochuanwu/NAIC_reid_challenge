@@ -1,0 +1,55 @@
+model:
+  name: 'sb_ibn101'
+  pretrained: True
+  load_weights: ''
+
+data:
+  type: 'image'
+  sources: ['kescireid']
+  targets: ['kescireid']
+  height: 256
+  width: 128
+  combineall: False
+  appended_train: False
+  is_train: True # train(include val) or inference. Default is True.
+  transforms: ['random_flip', 'random_crop', 'random_erase', 'iaa']
+  save_dir: 'log/strongbaseline_r50_ibn_softmax_triplet_256x128_adam_v1.yaml'
+sampler:
+  train_sampler: 'RandomIdentityOverSampler'
+  num_instances: 4
+loss:
+  name: 'triplet'
+  loss_reduce: 'mean'
+  softmax:
+    label_smooth: True
+  triplet:
+#    metric: 'cosine'
+    margin: 0.3
+    weight_t: 1.  # weight to balance hard triplet loss
+    weight_x: 1.  # weight to balance cross entropy loss
+train:
+  optim: 'adam'
+  lr: 3.5e-4
+  apex: True
+  max_epoch: 120
+  batch_size: 128
+  fixbase_epoch: 0
+  open_layers: []
+  staged_lr: False
+  lr_scheduler: 'warmup_linear'
+  stepsize: [40, 70]
+  gamma: 0.1
+  seed: 2019
+  warmup_factor: 0.1
+  warmup_iters: 10
+
+test:
+  batch_size: 500
+#  dist_metric: 'cosine'
+  normalize_feature: True
+  evaluate: False # train stage
+  eval_freq: 5
+  rerank: False
+  visactmap: False
+  visrank: False  # visualize ranked results (only available when cfg.test.evaluate=True)
+  visrank_topk: 20  # top-k ranks to visualize

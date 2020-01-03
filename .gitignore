@@ -1,0 +1,5 @@
+log/
+input/
+model_results_A/
+model_results_B/
+.idea/
